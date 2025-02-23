@@ -55,6 +55,7 @@ metadata:
   name: mongo-service
   namespace: mongodb-test
 spec:
+  type: LoadBalancer
   selector:
     app: mongodb
   ports:
