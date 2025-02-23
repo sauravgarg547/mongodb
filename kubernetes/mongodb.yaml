@@ -1,1 +1,57 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: backend-statefulset
+  namespace: mongodb-test
+  labels:
+    app: backend
+spec:
+  replicas: 3
+  serviceName: "backend"
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: saurav547/jannat-backend-admin:v3.2
+          envFrom:
+            - configMapRef:
+                name: backend-config  
+          ports:
+            - containerPort: 5000
+          resources:
+            limits:
+              memory: "500Mi"
+              cpu: "400m"
+            requests:
+              memory: "200Mi"
+              cpu: "200m"
+      volumeClaimTemplates:
+        - metadata:
+            name: backend-data
+          spec:
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 10Gi  # Adjust as needed
+            storageClassName: <your-cluster-storage-class>  # Cluster storage class name here
 
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: mongodb-test
+spec:
+  clusterIP: None  # StatefulSet requires a headless service
+  selector:
+    app: backend
+  ports:
+    - port: 5000
+      targetPort: 5000
+      protocol: TCP
