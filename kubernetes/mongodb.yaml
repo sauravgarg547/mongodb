@@ -1,57 +1,65 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: backend-statefulset
+  name: mongodb
   namespace: mongodb-test
-  labels:
-    app: backend
 spec:
-  replicas: 3
-  serviceName: "backend"
+  replicas: 1
   selector:
     matchLabels:
-      app: backend
+      app: mongodb
+  serviceName: "mongodb"
   template:
     metadata:
       labels:
-        app: backend
+        app: mongodb
     spec:
       containers:
-        - name: backend
-          image: saurav547/jannat-backend-admin:v3.2
-          envFrom:
-            - configMapRef:
-                name: backend-config  
+        - name: mongodb
+          image: mongo:latest
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-credentials
+                  key: MONGO_USER
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-credentials
+                  key: MONGO_PASSWORD
+            - name: MONGO_INITDB_DATABASE
+              value: jannatapp
           ports:
-            - containerPort: 5000
-          resources:
-            limits:
-              memory: "500Mi"
-              cpu: "400m"
-            requests:
-              memory: "200Mi"
-              cpu: "200m"
-      volumeClaimTemplates:
-        - metadata:
-            name: backend-data
-          spec:
-            accessModes: ["ReadWriteOnce"]
-            resources:
-              requests:
-                storage: 10Gi  # Adjust as needed
-            storageClassName: <your-cluster-storage-class>  # Cluster storage class name here
+            - containerPort: 27017
+          volumeMounts:
+            - name: mongodb-data
+              mountPath: /data/db
+
+  volumeClaimTemplates:
+    - metadata:
+        name: mongodb-data
+      spec:
+        accessModes: 
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 2Gi
+        storageClassName: cluster-storage-class   # Replace this with your cluster's storage class name
 
 ---
+
 apiVersion: v1
 kind: Service
 metadata:
-  name: backend-service
+  name: mongo-service
   namespace: mongodb-test
 spec:
-  clusterIP: None  # StatefulSet requires a headless service
   selector:
-    app: backend
+    app: mongodb
   ports:
-    - port: 5000
-      targetPort: 5000
+    - port: 27017
+      targetPort: 27017
       protocol: TCP
+  clusterIP: None  # This is important for StatefulSet to enable stable network identities
+
