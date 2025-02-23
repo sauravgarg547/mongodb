@@ -4,11 +4,11 @@ metadata:
   name: mongodb
   namespace: mongodb-test
 spec:
+  serviceName: "mongo-headless-service"  # Matches the headless service name
   replicas: 1
   selector:
     matchLabels:
       app: mongodb
-  serviceName: "mongodb"
   template:
     metadata:
       labels:
@@ -37,30 +37,46 @@ spec:
               mountPath: /data/db
 
   volumeClaimTemplates:
-    - metadata:
-        name: mongodb-data
-      spec:
-        accessModes: 
-          - ReadWriteOnce
-        resources:
-          requests:
-            storage: 10Gi
-        storageClassName: cluster-storage-class   # Replace this with your cluster's storage class name
+  - metadata:
+      name: mongodb-data
+    spec:
+      accessModes: 
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
+      storageClassName: cluster-storage-class
 
 ---
 
+# 1. Headless Service for internal stable networking
 apiVersion: v1
 kind: Service
 metadata:
-  name: mongo-service
+  name: mongo-headless-service
   namespace: mongodb-test
 spec:
-  type: LoadBalancer
+  clusterIP: None  # Required for StatefulSet
   selector:
     app: mongodb
   ports:
     - port: 27017
       targetPort: 27017
       protocol: TCP
-  clusterIP: None  # This is important for StatefulSet to enable stable network identities
 
+---
+
+# 2. LoadBalancer Service for external access
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-loadbalancer-service
+  namespace: mongodb-test
+spec:
+  type: LoadBalancer  # External access
+  selector:
+    app: mongodb
+  ports:
+    - port: 27017
+      targetPort: 27017
+      protocol: TCP
