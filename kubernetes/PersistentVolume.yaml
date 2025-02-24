@@ -19,5 +19,5 @@ spec:
             - key: kubernetes.io/hostname
               operator: In
               values:
-                - ip-192-168-40-115.ap-south-1.compute.internal  # Aap isme dono nodes ka naam add kar sakte hain
-                - ip-192-168-94-126.ap-south-1.compute.internal
+                - ip-192-168-49-50.ap-south-1.compute.internal  # Aap isme dono nodes ka naam add kar sakte hain
+                - ip-192-168-66-111.ap-south-1.compute.internal
